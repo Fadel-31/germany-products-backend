@@ -1,4 +1,6 @@
 const Product = require('../models/Product');
+const fs = require('fs');
+const path = require('path');
 
 exports.addProduct = async (req, res) => {
   const { title } = req.body;
@@ -62,12 +64,55 @@ exports.deleteProduct = async (req, res) => {
 };
 
 exports.deleteCategory = async (req, res) => {
-  const { productId, categoryId } = req.params;
-  const product = await Product.findById(productId);
-  if (!product) return res.status(404).json({ message: 'Product not found' });
+  try {
+    const { productId, categoryId } = req.params;
+    
+    // Find the product
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
 
-  product.categories = product.categories.filter(cat => cat._id.toString() !== categoryId);
-  await product.save();
+    // Find the category index
+    const categoryIndex = product.categories.findIndex(
+      cat => cat._id.toString() === categoryId
+    );
 
-  res.json(product);
+    if (categoryIndex === -1) {
+      return res.status(404).json({ message: 'Category not found' });
+    }
+
+    // Get the category before deletion for image cleanup
+    const categoryToDelete = product.categories[categoryIndex];
+
+    // Delete the image file if it exists
+    if (categoryToDelete.image) {
+      const imagePath = path.join(__dirname, "..", "uploads", categoryToDelete.image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlink(imagePath, err => {
+          if (err) console.warn("Could not delete category image:", err.message);
+        });
+      }
+    }
+
+    product.categories.splice(categoryIndex, 1);
+
+    // Save the updated product
+    await product.save();
+
+    res.status(200).json({ 
+      message: "Category deleted successfully",
+      deletedCategory: categoryToDelete,
+      product
+    });
+    
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    res.status(500).json({ 
+      message: "Server error", 
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
 };
+
