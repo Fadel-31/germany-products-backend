@@ -8,6 +8,7 @@ const fs = require("fs");
 const path = require("path");
 const mongoose = require('mongoose');
 const { deleteCategory } = require('../controllers/productController');
+const { deleteProduct } = require('../controllers/productController');
 
 function validateObjectId(paramName) {
   return (req, res, next) => {
@@ -42,6 +43,7 @@ router.delete(
   deleteCategory
 
 );
+router.delete('/:id', protect, validateObjectId('id'), deleteProduct);
 
 
 
