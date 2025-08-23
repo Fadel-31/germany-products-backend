@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { addProduct, addCategoryToProduct, getProducts } = require('../controllers/productController');
+const { addProduct, addCategoryToProduct, getProducts , editProductImage , editCategoryImage } = require('../controllers/productController');
 const protect = require('../middleware/authMiddleware');
 const upload = require('../multer');
 
@@ -45,7 +45,22 @@ router.delete(
 );
 router.delete('/:id', protect, validateObjectId('id'), deleteProduct);
 
+router.put(
+  '/:id/logo',
+  protect,
+  validateObjectId('id'),
+  upload.single('logo'),
+  editProductImage
+);
 
+router.put(
+  '/:productId/categories/:categoryId/image',
+  protect,
+  validateObjectId('productId'),
+  validateObjectId('categoryId'),
+  upload.single('image'),
+  editCategoryImage
+);
 
 
 module.exports = router;

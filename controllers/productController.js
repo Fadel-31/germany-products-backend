@@ -48,8 +48,58 @@ exports.addCategoryToProduct = async (req, res) => {
   }
 };
 
+// Edit Product Logo
+exports.editProductImage = async (req, res, next) => {
+  try {
+    console.log("=== Edit Product Logo Called ===");
+    console.log("Product ID param:", req.params.id);
+    console.log("Uploaded file:", req.file);
+    
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
 
+    if (!req.file) return res.status(400).json({ message: 'No image uploaded' });
 
+    // Delete old logo
+    if (product.logo) {
+      const oldPath = path.join(__dirname, '..', 'uploads', product.logo);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    product.logo = req.file.filename;
+    await product.save();
+
+    res.json(product);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Edit Category Image
+exports.editCategoryImage = async (req, res, next) => {
+  try {
+    const product = await Product.findById(req.params.productId);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    const category = product.categories.id(req.params.categoryId);
+    if (!category) return res.status(404).json({ message: 'Category not found' });
+
+    if (!req.file) return res.status(400).json({ message: 'No image uploaded' });
+
+    // Delete old image
+    if (category.image) {
+      const oldPath = path.join(__dirname, '..', 'uploads', category.image);
+      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+    }
+
+    category.image = req.file.filename;
+    await product.save();
+
+    res.json(product);
+  } catch (err) {
+    next(err);
+  }
+};
 
 exports.getProducts = async (req, res) => {
   const products = await Product.find();
